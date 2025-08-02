@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Test</title>
+</head>
+<body>
+    <h1>Simple Script Loading Test</h1>
+    <div id="results"></div>
+
+    <script>
+        console.log('Starting simple test...');
+        
+        // Test each script individually
+        function testScript(scriptName, scriptSrc) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = scriptSrc;
+                script.onload = () => {
+                    console.log(`✓ ${scriptName} loaded successfully`);
+                    resolve(scriptName);
+                };
+                script.onerror = () => {
+                    console.error(`✗ ${scriptName} failed to load`);
+                    reject(scriptName);
+                };
+                document.head.appendChild(script);
+            });
+        }
+        
+        async function runTests() {
+            const results = document.getElementById('results');
+            let html = '<h2>Script Loading Results:</h2>';
+            
+            try {
+                await testScript('SwissEphemeris', 'libs/sweph-reference.js');
+                html += '<p style="color: green;">✓ SwissEphemeris loaded</p>';
+            } catch (e) {
+                html += '<p style="color: red;">✗ SwissEphemeris failed</p>';
+            }
+            
+            try {
+                await testScript('BrowserGeocoder', 'libs/geocoder-reference.js');
+                html += '<p style="color: green;">✓ BrowserGeocoder loaded</p>';
+            } catch (e) {
+                html += '<p style="color: red;">✗ BrowserGeocoder failed</p>';
+            }
+            
+            try {
+                await testScript('Core', 'engine/core.js');
+                html += '<p style="color: green;">✓ Core loaded</p>';
+            } catch (e) {
+                html += '<p style="color: red;">✗ Core failed</p>';
+            }
+            
+            try {
+                await testScript('Astrology', 'engine/astrology.js');
+                html += '<p style="color: green;">✓ Astrology loaded</p>';
+            } catch (e) {
+                html += '<p style="color: red;">✗ Astrology failed</p>';
+            }
+            
+            try {
+                await testScript('Network', 'engine/network.js');
+                html += '<p style="color: green;">✓ Network loaded</p>';
+            } catch (e) {
+                html += '<p style="color: red;">✗ Network failed</p>';
+            }
+            
+            try {
+                await testScript('UI', 'engine/ui.js');
+                html += '<p style="color: green;">✓ UI loaded</p>';
+            } catch (e) {
+                html += '<p style="color: red;">✗ UI failed</p>';
+            }
+            
+            // Check global objects
+            html += '<h2>Global Objects:</h2>';
+            html += `<p>SwissEphemeris: ${typeof SwissEphemeris}</p>`;
+            html += `<p>BrowserGeocoder: ${typeof BrowserGeocoder}</p>`;
+            html += `<p>window.AstrologyEngine: ${typeof window.AstrologyEngine}</p>`;
+            html += `<p>window.SearchsterApp: ${typeof window.SearchsterApp}</p>`;
+            html += `<p>window.NetworkEngine: ${typeof window.NetworkEngine}</p>`;
+            
+            results.innerHTML = html;
+        }
+        
+        // Run tests after a short delay
+        setTimeout(runTests, 100);
+    </script>
+</body>
+</html> 

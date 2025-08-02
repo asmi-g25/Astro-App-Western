@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Astrology Engine Test</title>
+</head>
+<body>
+    <h1>Astrology Engine Test</h1>
+    <div id="results"></div>
+
+    <script>
+        console.log('Starting astrology engine test...');
+        
+        // Test 1: Load libraries
+        function loadLibraries() {
+            return new Promise((resolve) => {
+                const script1 = document.createElement('script');
+                script1.src = 'libs/sweph-reference.js';
+                script1.onload = () => {
+                    console.log('SwissEphemeris loaded');
+                    const script2 = document.createElement('script');
+                    script2.src = 'libs/geocoder-reference.js';
+                    script2.onload = () => {
+                        console.log('BrowserGeocoder loaded');
+                        resolve();
+                    };
+                    document.head.appendChild(script2);
+                };
+                document.head.appendChild(script1);
+            });
+        }
+        
+        // Test 2: Load astrology engine
+        function loadAstrologyEngine() {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'engine/astrology.js';
+                script.onload = () => {
+                    console.log('Astrology engine script loaded');
+                    resolve();
+                };
+                script.onerror = () => {
+                    console.error('Astrology engine script failed to load');
+                    reject();
+                };
+                document.head.appendChild(script);
+            });
+        }
+        
+        // Run tests
+        async function runTests() {
+            const results = document.getElementById('results');
+            let html = '<h2>Test Results:</h2>';
+            
+            try {
+                // Load libraries
+                await loadLibraries();
+                html += '<p style="color: green;">✓ Libraries loaded</p>';
+                
+                // Load astrology engine
+                await loadAstrologyEngine();
+                html += '<p style="color: green;">✓ Astrology engine script loaded</p>';
+                
+                // Check if class is available
+                if (typeof AstrologyEngine !== 'undefined') {
+                    html += '<p style="color: green;">✓ AstrologyEngine class defined</p>';
+                } else {
+                    html += '<p style="color: red;">✗ AstrologyEngine class not defined</p>';
+                }
+                
+                // Check if class is in window
+                if (typeof window.AstrologyEngine !== 'undefined') {
+                    html += '<p style="color: green;">✓ AstrologyEngine in window</p>';
+                } else {
+                    html += '<p style="color: red;">✗ AstrologyEngine not in window</p>';
+                }
+                
+                // Try to create instance
+                if (typeof AstrologyEngine !== 'undefined') {
+                    try {
+                        const instance = new AstrologyEngine();
+                        html += '<p style="color: green;">✓ AstrologyEngine instance created</p>';
+                    } catch (error) {
+                        html += `<p style="color: red;">✗ Failed to create instance: ${error.message}</p>`;
+                    }
+                }
+                
+                // Check if instance is in window
+                if (typeof window.astrology !== 'undefined') {
+                    html += '<p style="color: green;">✓ Astrology instance in window</p>';
+                } else {
+                    html += '<p style="color: red;">✗ Astrology instance not in window</p>';
+                }
+                
+            } catch (error) {
+                html += `<p style="color: red;">✗ Test failed: ${error.message}</p>`;
+            }
+            
+            results.innerHTML = html;
+        }
+        
+        // Run tests after a short delay
+        setTimeout(runTests, 100);
+    </script>
+</body>
+</html> 

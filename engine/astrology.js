@@ -11,7 +11,7 @@ class AstrologyEngine {
         ];
         
         // Python backend configuration
-        this.backendUrl = 'http://127.0.0.1:5000';
+        this.backendUrl = window.location.origin;
         this.geocoder = null;
         this.initialized = false;
         this.backendAvailable = false;

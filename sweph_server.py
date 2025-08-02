@@ -2,14 +2,14 @@
 """
 Swiss Ephemeris Server for Astro-Sample
 Uses real Swiss Ephemeris data files for accurate calculations
-WITH PROPER TIMEZONE HANDLING
+WITH PROPER TIMEZONE HANDLING AND STATIC FILE SERVING
 """
 
 import os
 import sys
 import json
 from datetime import datetime
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory, render_template_string
 from flask_cors import CORS
 
 # Try to import timezone libraries
@@ -33,7 +33,8 @@ except ImportError:
     SWEPH_AVAILABLE = False
     print("❌ Swiss Ephemeris library not found. Install with: pip install pyswisseph")
 
-app = Flask(__name__)
+# Create Flask app with static file serving
+app = Flask(__name__, static_folder='.', static_url_path='')
 CORS(app)  # Enable CORS for browser requests
 
 # Set the ephemeris path to our data files
@@ -204,7 +205,43 @@ def calculate_fortuna(sun_pos, moon_pos, asc_pos):
     fortuna = asc_pos + moon_pos - sun_pos
     return fortuna % 360
 
-@app.route('/calculate_natal_chart', methods=['POST'])
+# ===== STATIC FILE SERVING ROUTES =====
+
+@app.route('/')
+def serve_index():
+    """Serve the main HTML file"""
+    try:
+        return send_from_directory('.', 'Searchster.html')
+    except FileNotFoundError:
+        return render_template_string("""
+        <h1>🚀 Swiss Ephemeris Server</h1>
+        <p>✅ Server is running!</p>
+        <p>📁 Place your <code>Searchster.html</code> file in the same directory as this server.</p>
+        <h2>API Endpoints:</h2>
+        <ul>
+            <li><a href="/health">/health</a> - Health check</li>
+            <li><a href="/test_ephemeris">/test_ephemeris</a> - Test Swiss Ephemeris</li>
+            <li>POST /calculate_natal_chart - Calculate natal chart</li>
+        </ul>
+        <h2>Status:</h2>
+        <ul>
+            <li>Swiss Ephemeris: {{ sweph_available }}</li>
+            <li>Timezone Support: {{ timezone_available }}</li>
+            <li>Ephemeris Path: {{ ephe_path }}</li>
+        </ul>
+        """, sweph_available=SWEPH_AVAILABLE, timezone_available=TIMEZONE_AVAILABLE, ephe_path=EPHE_PATH)
+
+@app.route('/<path:filename>')
+def serve_static_files(filename):
+    """Serve static files (JS, CSS, images, etc.)"""
+    try:
+        return send_from_directory('.', filename)
+    except FileNotFoundError:
+        return f"File not found: {filename}", 404
+
+# ===== API ROUTES =====
+
+@app.route('/api/calculate_natal_chart', methods=['POST'])
 def calculate_natal_chart():
     """Calculate complete natal chart with proper timezone handling"""
     try:
@@ -281,6 +318,13 @@ def calculate_natal_chart():
             'ephePath': EPHE_PATH
         }), 500
 
+# Keep the old endpoint for backward compatibility
+@app.route('/calculate_natal_chart', methods=['POST'])
+def calculate_natal_chart_legacy():
+    """Legacy endpoint - redirects to new API endpoint"""
+    return calculate_natal_chart()
+
+@app.route('/api/test_ephemeris', methods=['GET'])
 @app.route('/test_ephemeris', methods=['GET'])
 def test_ephemeris():
     """Test Swiss Ephemeris installation and data files"""
@@ -321,6 +365,7 @@ def test_ephemeris():
             'error': str(e)
         }), 500
 
+@app.route('/api/health', methods=['GET'])
 @app.route('/health', methods=['GET'])
 def health_check():
     """Health check endpoint"""
@@ -329,14 +374,16 @@ def health_check():
         'sweph_available': SWEPH_AVAILABLE,
         'timezone_available': TIMEZONE_AVAILABLE,
         'ephe_path_exists': os.path.exists(EPHE_PATH),
-        'ephe_path': EPHE_PATH
+        'ephe_path': EPHE_PATH,
+        'server_info': 'Swiss Ephemeris Server with Static File Serving'
     })
 
 if __name__ == '__main__':
-    print("🚀 Starting Swiss Ephemeris Server with Timezone Support...")
+    print("🚀 Starting Swiss Ephemeris Server with Static File Serving...")
     print(f"📊 Swiss Ephemeris Available: {SWEPH_AVAILABLE}")
     print(f"🌍 Timezone Support Available: {TIMEZONE_AVAILABLE}")
     print(f"📁 Ephemeris Path: {EPHE_PATH}")
+    print(f"🌐 Static Files: Serving from current directory")
     
     if not SWEPH_AVAILABLE:
         print("\n❌ To install Swiss Ephemeris:")
@@ -349,5 +396,10 @@ if __name__ == '__main__':
     if SWEPH_AVAILABLE and TIMEZONE_AVAILABLE:
         print("\n✅ Ready for accurate timezone-corrected astrological calculations!")
     
+    print("\n🌐 Access your app at:")
+    print("   http://127.0.0.1:5000")
+    print("   http://localhost:5000")
+    
     # Start the server
-    app.run(host='127.0.0.1', port=5000, debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)

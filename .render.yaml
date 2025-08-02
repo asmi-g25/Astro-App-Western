@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: astro-api
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python sweph_server.py
+    runtime: python-3.11
+    region: oregon
+    plan: free
